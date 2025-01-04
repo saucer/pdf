@@ -11,7 +11,7 @@ namespace saucer::modules
     {
         if (!m_parent->parent().thread_safe())
         {
-            return m_parent->parent().dispatch([this, file] { return save(file); });
+            return m_parent->parent().dispatch([this, file, size] { return save(file, size); });
         }
 
         auto *webview = m_parent->native<false>()->web_view;
