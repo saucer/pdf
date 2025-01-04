@@ -6,11 +6,11 @@
 
 namespace saucer::modules
 {
-    void pdf::save(const fs::path &file, std::pair<double, double> size)
+    void pdf::save(const print_settings &settings)
     {
         if (!m_parent->parent().thread_safe())
         {
-            return m_parent->parent().dispatch([this, file, size] { return save(file, size); });
+            return m_parent->parent().dispatch([this, settings] { return save(settings); });
         }
 
         ComPtr<ICoreWebView2_7> webview;
@@ -27,29 +27,40 @@ namespace saucer::modules
             return;
         }
 
-        ComPtr<ICoreWebView2PrintSettings> settings;
+        ComPtr<ICoreWebView2PrintSettings> print_settings;
 
-        if (!SUCCEEDED(environment->CreatePrintSettings(&settings)))
+        if (!SUCCEEDED(environment->CreatePrintSettings(&print_settings)))
         {
             return;
         }
 
-        settings->put_PageWidth(size.first);
-        settings->put_PageHeight(size.second);
+        auto [width, height] = settings.size;
+        auto orientation     = settings.orientation == layout::landscape ? COREWEBVIEW2_PRINT_ORIENTATION_LANDSCAPE
+                                                                         : COREWEBVIEW2_PRINT_ORIENTATION_PORTRAIT;
+
+        print_settings->put_PageWidth(width);
+        print_settings->put_PageHeight(height);
+        print_settings->put_Orientation(orientation);
 
         std::error_code ec{};
 
-        auto path     = fs::absolute(file, ec);
-        auto finished = std::atomic_bool{false};
+        if (auto parent = settings.file.parent_path(); !fs::exists(parent))
+        {
+            fs::create_directories(parent, ec);
+        }
 
-        auto callback = [&](HRESULT, BOOL)
+        std::atomic_bool finished{false};
+
+        auto complete_callback = [&](HRESULT, BOOL)
         {
             finished.store(true);
             return S_OK;
         };
 
-        webview->PrintToPdf(path.wstring().c_str(), settings.Get(),
-                            Microsoft::WRL::Callback<ICoreWebView2PrintToPdfCompletedHandler>(callback).Get());
+        auto path     = fs::weakly_canonical(settings.file, ec);
+        auto callback = Microsoft::WRL::Callback<ICoreWebView2PrintToPdfCompletedHandler>(complete_callback);
+
+        webview->PrintToPdf(path.wstring().c_str(), print_settings.Get(), callback.Get());
 
         while (!finished)
         {
