@@ -6,20 +6,33 @@
 
 namespace saucer::modules
 {
-    void pdf::save(const fs::path &file, std::pair<double, double> size)
+    void pdf::save(const print_settings &settings)
     {
         if (!m_parent->parent().thread_safe())
         {
-            return m_parent->parent().dispatch([this, file, size] { return save(file, size); });
+            return m_parent->parent().dispatch([this, settings] { return save(settings); });
         }
 
         auto &webview = m_parent->native<false>()->web_view;
         auto *page    = webview->page();
 
-        auto page_size = QPageSize{{size.first, size.second}, QPageSize::Unit::Inch};
-        auto layout    = QPageLayout{page_size, QPageLayout::Orientation::Portrait, QMarginsF{}};
+        auto [width, height] = settings.size;
 
-        page->printToPdf(QString::fromStdString(file.string()), layout);
+        auto page_size   = QPageSize{{width, height}, QPageSize::Unit::Inch};
+        auto orientation = settings.orientation == layout::landscape ? QPageLayout::Orientation::Landscape
+                                                                     : QPageLayout::Orientation::Portrait;
+
+        std::error_code ec{};
+
+        if (auto parent = settings.file.parent_path(); !fs::exists(parent))
+        {
+            fs::create_directories(parent, ec);
+        }
+
+        auto path   = fs::weakly_canonical(settings.file, ec);
+        auto layout = QPageLayout{page_size, orientation, QMarginsF{}};
+
+        page->printToPdf(QString::fromStdString(path.string()), layout);
 
         std::atomic_bool finished{false};
         page->connect(page, &QWebEnginePage::pdfPrintingFinished, [&finished]() { finished.store(true); });
