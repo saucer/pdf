@@ -39,7 +39,7 @@ target_link_libraries(<target> saucer::pdf)
 
 ```cpp
 auto webview  = saucer::webview{/*...*/};
-auto& pdf     = app->add_module<saucer::modules::pdf>();
+auto& pdf     = webview->add_module<saucer::modules::pdf>();
 
 pdf.save({.file = "page.pdf"});
 ```
