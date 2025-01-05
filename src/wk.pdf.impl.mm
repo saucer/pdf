@@ -1,7 +1,7 @@
 #include "wk.pdf.impl.hpp"
 
 @implementation PrintDelegate
-- (instancetype)initWithCallback:(std::function<void()>)callback;
+- (instancetype)initWithCallback:(std::function<void()>)callback
 {
     self             = [super init];
     self->m_callback = std::move(callback);
