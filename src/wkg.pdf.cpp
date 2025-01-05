@@ -43,6 +43,12 @@ namespace saucer::modules
         auto paper_size      = paper_size_handle{gtk_paper_size_new_custom("", "", width, height, GTK_UNIT_INCH)};
         auto setup           = utils::g_object_ptr<GtkPageSetup>{gtk_page_setup_new()};
 
+        gtk_page_setup_set_top_margin(setup.get(), 0, GTK_UNIT_INCH);
+        gtk_page_setup_set_bottom_margin(setup.get(), 0, GTK_UNIT_INCH);
+
+        gtk_page_setup_set_left_margin(setup.get(), 0, GTK_UNIT_INCH);
+        gtk_page_setup_set_right_margin(setup.get(), 0, GTK_UNIT_INCH);
+
         gtk_page_setup_set_paper_size(setup.get(), paper_size.get());
         webkit_print_operation_set_page_setup(operation.get(), setup.get());
 
