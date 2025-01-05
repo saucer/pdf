@@ -16,7 +16,7 @@
   ```cmake
   CPMFindPackage(
     NAME           saucer-pdf
-    VERSION        1.0.0
+    VERSION        1.0.1
     GIT_REPOSITORY "https://github.com/saucer/pdf"
   )
   ```
@@ -25,7 +25,7 @@
   ```cmake
   include(FetchContent)
 
-  FetchContent_Declare(saucer-pdf GIT_REPOSITORY "https://github.com/saucer/pdf" GIT_TAG v1.0.0)
+  FetchContent_Declare(saucer-pdf GIT_REPOSITORY "https://github.com/saucer/pdf" GIT_TAG v1.0.1)
   FetchContent_MakeAvailable(saucer-pdf)
   ```
 
