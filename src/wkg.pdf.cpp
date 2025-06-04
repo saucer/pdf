@@ -1,7 +1,8 @@
 #include "pdf.hpp"
 
-#include "wkg.webview.impl.hpp"
 #include "handle.hpp"
+#include "gtk.app.impl.hpp"
+#include "wkg.webview.impl.hpp"
 
 #include <atomic>
 
@@ -68,7 +69,7 @@ namespace saucer::modules
 
         while (!finished)
         {
-            m_parent->parent().run<false>();
+            m_parent->parent().native<false>()->iteration();
         }
     }
 } // namespace saucer::modules

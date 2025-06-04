@@ -1,8 +1,9 @@
 #include "wk.pdf.impl.hpp"
 
-#include "wk.webview.impl.hpp"
-
 #include "cocoa.utils.hpp"
+
+#include "cocoa.app.impl.hpp"
+#include "wk.webview.impl.hpp"
 #include "cocoa.window.impl.hpp"
 
 #include <atomic>
@@ -62,7 +63,7 @@ namespace saucer::modules
 
         while (!finished)
         {
-            m_parent->parent().run<false>();
+            m_parent->parent().native<false>()->iteration();
         }
     }
 } // namespace saucer::modules

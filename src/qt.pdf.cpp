@@ -1,5 +1,6 @@
 #include "pdf.hpp"
 
+#include "qt.app.impl.hpp"
 #include "qt.webview.impl.hpp"
 
 #include <atomic>
@@ -39,7 +40,7 @@ namespace saucer::modules
 
         while (!finished)
         {
-            m_parent->parent().run<false>();
+            m_parent->parent().native<false>()->iteration();
         }
     }
 } // namespace saucer::modules

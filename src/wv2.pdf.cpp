@@ -1,5 +1,6 @@
 #include "pdf.hpp"
 
+#include "win32.app.impl.hpp"
 #include "wv2.webview.impl.hpp"
 
 #include <atomic>
@@ -13,16 +14,11 @@ namespace saucer::modules
             return m_parent->parent().dispatch([this, settings] { return save(settings); });
         }
 
-        ComPtr<ICoreWebView2_7> webview;
+        auto &webview = m_parent->native<false>()->web_view;
+
         ComPtr<ICoreWebView2Environment6> environment;
 
-        if (!SUCCEEDED(m_parent->native<false>()->web_view.As(&webview)))
-        {
-            return;
-        }
-
-        if (ComPtr<ICoreWebView2Environment> env;
-            !SUCCEEDED(webview->get_Environment(&env)) || !SUCCEEDED(env.As(&environment)))
+        if (ComPtr<ICoreWebView2Environment> env; !SUCCEEDED(webview->get_Environment(&env)) || !SUCCEEDED(env.As(&environment)))
         {
             return;
         }
@@ -64,7 +60,7 @@ namespace saucer::modules
 
         while (!finished)
         {
-            m_parent->parent().run<false>();
+            m_parent->parent().native<false>()->iteration();
         }
     }
 } // namespace saucer::modules
