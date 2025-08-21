@@ -1,31 +1,24 @@
-#include "pdf.hpp"
+#include "pdf.impl.hpp"
 
-#include "qt.app.impl.hpp"
-#include "qt.webview.impl.hpp"
-
-#include <atomic>
+#include <saucer/qt.app.impl.hpp>
+#include <saucer/qt.webview.impl.hpp>
 
 namespace saucer::modules
 {
-    void pdf::save(const print_settings &settings)
+    void pdf::impl::save(const settings &settings) // NOLINT(*-function-const)
     {
-        if (!m_parent->parent().thread_safe())
-        {
-            return m_parent->parent().dispatch([this, settings] { return save(settings); });
-        }
+        using enum QPageLayout::Orientation;
 
-        auto &webview = m_parent->native<false>()->web_view;
-        auto *page    = webview->page();
+        auto *const web_view = webview->native<false>()->platform->web_view;
+        auto *const page     = web_view->page();
 
         auto [width, height] = settings.size;
-
-        auto page_size   = QPageSize{{width, height}, QPageSize::Unit::Inch};
-        auto orientation = settings.orientation == layout::landscape ? QPageLayout::Orientation::Landscape
-                                                                     : QPageLayout::Orientation::Portrait;
+        auto page_size       = QPageSize{{width, height}, QPageSize::Unit::Inch};
+        auto orientation     = settings.orientation == layout::landscape ? Landscape : Portrait;
 
         std::error_code ec{};
 
-        if (auto parent = settings.file.parent_path(); !fs::exists(parent))
+        if (auto parent = settings.file.parent_path(); !fs::exists(parent, ec))
         {
             fs::create_directories(parent, ec);
         }
@@ -35,12 +28,12 @@ namespace saucer::modules
 
         page->printToPdf(QString::fromStdString(path.string()), layout);
 
-        std::atomic_bool finished{false};
-        page->connect(page, &QWebEnginePage::pdfPrintingFinished, [&finished]() { finished.store(true); });
+        bool finished{false};
+        page->connect(page, &QWebEnginePage::pdfPrintingFinished, [&finished]() { finished = true; });
 
         while (!finished)
         {
-            m_parent->parent().native<false>()->iteration();
+            parent->native<false>()->platform->iteration();
         }
     }
 } // namespace saucer::modules

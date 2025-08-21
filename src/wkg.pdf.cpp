@@ -1,25 +1,18 @@
-#include "pdf.hpp"
+#include "pdf.impl.hpp"
 
-#include "handle.hpp"
-#include "gtk.app.impl.hpp"
-#include "wkg.webview.impl.hpp"
-
-#include <atomic>
+#include <saucer/gtk.utils.hpp>
+#include <saucer/gtk.app.impl.hpp>
+#include <saucer/wkg.webview.impl.hpp>
 
 namespace saucer::modules
 {
     using paper_size_handle = utils::handle<GtkPaperSize *, gtk_paper_size_free>;
 
-    void pdf::save(const print_settings &settings)
+    void pdf::impl::save(const settings &settings) // NOLINT(*-function-const)
     {
-        if (!m_parent->parent().thread_safe())
-        {
-            return m_parent->parent().dispatch([this, settings] { return save(settings); });
-        }
+        auto *web_view = webview->native<false>()->platform->web_view;
 
-        auto *webview = m_parent->native<false>()->web_view;
-
-        auto operation      = utils::g_object_ptr<WebKitPrintOperation>{webkit_print_operation_new(webview)};
+        auto operation      = utils::g_object_ptr<WebKitPrintOperation>{webkit_print_operation_new(web_view)};
         auto print_settings = utils::g_object_ptr<GtkPrintSettings>{gtk_print_settings_new()};
 
         gtk_print_settings_set_printer(print_settings.get(), "Print to File");
@@ -27,15 +20,15 @@ namespace saucer::modules
 
         std::error_code ec{};
 
-        if (auto parent = settings.file.parent_path(); !fs::exists(parent))
+        if (auto parent = settings.file.parent_path(); !fs::exists(parent, ec))
         {
             fs::create_directories(parent, ec);
         }
 
-        const auto parent   = fs::weakly_canonical(settings.file.parent_path(), ec);
-        const auto filename = settings.file.filename().replace_extension();
+        const auto canonical = fs::weakly_canonical(settings.file.parent_path(), ec);
+        const auto filename  = settings.file.filename().replace_extension();
 
-        gtk_print_settings_set(print_settings.get(), GTK_PRINT_SETTINGS_OUTPUT_DIR, parent.c_str());
+        gtk_print_settings_set(print_settings.get(), GTK_PRINT_SETTINGS_OUTPUT_DIR, canonical.c_str());
         gtk_print_settings_set(print_settings.get(), GTK_PRINT_SETTINGS_OUTPUT_BASENAME, filename.c_str());
 
         webkit_print_operation_set_print_settings(operation.get(), print_settings.get());
@@ -53,15 +46,13 @@ namespace saucer::modules
         gtk_page_setup_set_paper_size(setup.get(), paper_size.get());
         webkit_print_operation_set_page_setup(operation.get(), setup.get());
 
-        gtk_page_setup_set_orientation(setup.get(), settings.orientation == layout::landscape
-                                                        ? GTK_PAGE_ORIENTATION_LANDSCAPE
-                                                        : GTK_PAGE_ORIENTATION_PORTRAIT);
+        gtk_page_setup_set_orientation(setup.get(), settings.orientation == layout::landscape ? GTK_PAGE_ORIENTATION_LANDSCAPE
+                                                                                              : GTK_PAGE_ORIENTATION_PORTRAIT);
 
-        std::atomic_bool finished{false};
-
-        auto callback = [](void *, std::atomic_bool *finished)
+        auto finished = false;
+        auto callback = [](void *, bool *finished)
         {
-            finished->store(true);
+            *finished = true;
         };
 
         g_signal_connect(operation.get(), "finished", G_CALLBACK(+callback), &finished);
@@ -69,7 +60,7 @@ namespace saucer::modules
 
         while (!finished)
         {
-            m_parent->parent().native<false>()->iteration();
+            parent->native<false>()->platform->iteration();
         }
     }
 } // namespace saucer::modules
