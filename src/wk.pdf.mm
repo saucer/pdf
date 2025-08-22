@@ -1,37 +1,27 @@
 #include "wk.pdf.impl.hpp"
 
-#include "cocoa.utils.hpp"
-
-#include "cocoa.app.impl.hpp"
-#include "wk.webview.impl.hpp"
-#include "cocoa.window.impl.hpp"
-
-#include <atomic>
+#include <saucer/cocoa.utils.hpp>
+#include <saucer/cocoa.app.impl.hpp>
+#include <saucer/wk.webview.impl.hpp>
+#include <saucer/cocoa.window.impl.hpp>
 
 namespace saucer::modules
 {
-    void pdf::save(const print_settings &settings)
+    void pdf::impl::save(const settings &settings) // NOLINT(*-function-const)
     {
-        const utils::autorelease_guard guard{};
+        const auto guard     = utils::autorelease_guard{};
+        auto *const web_view = webview->native<false>()->platform->web_view.get();
+        auto *const window   = webview->parent().native<false>()->platform->window;
 
-        if (!m_parent->parent().thread_safe())
-        {
-            return m_parent->parent().dispatch([this, settings] { return save(settings); });
-        }
+        auto *const info     = [NSPrintInfo sharedPrintInfo];
+        auto [width, height] = settings.size;
 
-        auto &webview = m_parent->native<false>()->web_view;
-        auto *window  = m_parent->window::native<false>()->window;
-
-        auto *const info = [NSPrintInfo sharedPrintInfo];
-
-        info.paperSize   = NSMakeSize(settings.size.first * 72, settings.size.second * 72);
-        info.orientation = settings.orientation == layout::landscape //
-                               ? NSPaperOrientationLandscape
-                               : NSPaperOrientationPortrait;
+        info.paperSize   = NSMakeSize(width * 72, height * 72);
+        info.orientation = settings.orientation == layout::landscape ? NSPaperOrientationLandscape : NSPaperOrientationPortrait;
 
         std::error_code ec{};
 
-        if (auto parent = settings.file.parent_path(); !fs::exists(parent))
+        if (auto parent = settings.file.parent_path(); !fs::exists(parent, ec))
         {
             fs::create_directories(parent, ec);
         }
@@ -42,18 +32,17 @@ namespace saucer::modules
         [info.dictionary setValue:NSPrintSaveJob forKey:NSPrintJobDisposition];
         [info.dictionary setValue:url forKey:NSPrintJobSavingURL];
 
-        auto *const operation = [webview.get() printOperationWithPrintInfo:info];
+        auto *const operation = [web_view printOperationWithPrintInfo:info];
 
         operation.showsPrintPanel    = false;
         operation.showsProgressPanel = false;
 
         operation.view.frame = NSMakeRect(0, 0, info.paperSize.width, info.paperSize.height);
 
-        std::atomic_bool finished{false};
-
+        auto finished        = false;
         auto *const delegate = [[[PrintDelegate alloc] initWithCallback:[&]
                                                        {
-                                                           finished.store(true);
+                                                           finished = true;
                                                        }] autorelease];
 
         [operation runOperationModalForWindow:window
@@ -61,9 +50,9 @@ namespace saucer::modules
                                didRunSelector:@selector(printOperationDidRun:success:contextInfo:)
                                   contextInfo:nullptr];
 
-        while (!finished)
+        while (!finished) // NOLINT(*-infinite-loop)
         {
-            m_parent->parent().native<false>()->iteration();
+            parent->native<false>()->platform->iteration();
         }
     }
 } // namespace saucer::modules

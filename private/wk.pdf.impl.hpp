@@ -1,18 +1,16 @@
 #pragma once
 
-#include "pdf.hpp"
+#include "pdf.impl.hpp"
 
 #import <Cocoa/Cocoa.h>
-
-#include <functional>
 
 @class PrintDelegate;
 
 @interface PrintDelegate : NSObject
 {
   @public
-    std::function<void()> m_callback;
+    void (^callback)();
 }
-- (instancetype)initWithCallback:(std::function<void()>)callback;
+- (instancetype)initWithCallback:(void (^)())closure;
 - (void)printOperationDidRun:(NSPrintOperation *)printOperation success:(BOOL)success contextInfo:(void *)contextInfo;
 @end
