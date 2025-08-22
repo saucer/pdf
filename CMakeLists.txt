@@ -88,4 +88,5 @@ if (saucer_backend STREQUAL "WebView2")
   )
 
   target_sources(${PROJECT_NAME} PRIVATE ${win_sources})
+  target_compile_definitions(${PROJECT_NAME} PRIVATE NOMINMAX)
 endif()
