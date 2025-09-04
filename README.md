@@ -16,7 +16,7 @@
   ```cmake
   CPMFindPackage(
     NAME           saucer-pdf
-    VERSION        1.0.1
+    VERSION        3.0.0
     GIT_REPOSITORY "https://github.com/saucer/pdf"
   )
   ```
@@ -25,7 +25,7 @@
   ```cmake
   include(FetchContent)
 
-  FetchContent_Declare(saucer-pdf GIT_REPOSITORY "https://github.com/saucer/pdf" GIT_TAG v1.0.1)
+  FetchContent_Declare(saucer-pdf GIT_REPOSITORY "https://github.com/saucer/pdf" GIT_TAG v3.0.0)
   FetchContent_MakeAvailable(saucer-pdf)
   ```
 
@@ -37,9 +37,4 @@ target_link_libraries(<target> saucer::pdf)
 
 ## 📃 Usage
 
-```cpp
-auto webview  = saucer::webview{/*...*/};
-auto& pdf     = webview->add_module<saucer::modules::pdf>();
-
-pdf.save({.file = "page.pdf"});
-```
+For a usage example see the [pdf-example](https://github.com/saucer/saucer/blob/master/examples/pdf/main.cpp)

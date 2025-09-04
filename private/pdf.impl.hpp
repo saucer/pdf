@@ -1,6 +1,6 @@
 #pragma once
 
-#include "pdf.hpp"
+#include <saucer/modules/pdf.hpp>
 
 namespace saucer::modules
 {
