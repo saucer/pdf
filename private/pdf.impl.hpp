@@ -9,7 +9,7 @@ namespace saucer::modules
         application *parent;
 
       public:
-        webview *webview;
+        saucer::webview *webview;
 
       public:
         void save(const settings &);

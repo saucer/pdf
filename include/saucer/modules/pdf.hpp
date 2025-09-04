@@ -50,7 +50,7 @@ namespace saucer::modules
         fs::path file;
 
       public:
-        size size{.w = 8.3, .h = 11.7};
+        pdf::size size{.w = 8.3, .h = 11.7};
         layout orientation{layout::portrait};
     };
 } // namespace saucer::modules
