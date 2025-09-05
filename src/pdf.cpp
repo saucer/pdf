@@ -14,6 +14,6 @@ namespace saucer::modules
 
     void pdf::save(const settings &settings)
     {
-        return invoke<&impl::save>(m_impl.get(), settings);
+        return utils::invoke<&impl::save>(m_impl.get(), settings);
     }
 } // namespace saucer::modules
