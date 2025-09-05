@@ -9,7 +9,7 @@ namespace saucer::modules
     {
         using enum QPageLayout::Orientation;
 
-        auto *const web_view = webview->native<false>()->platform->web_view;
+        auto *const web_view = webview->native<false>()->platform->web_view.get();
         auto *const page     = web_view->page();
 
         auto [width, height] = settings.size;
