@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.25)
-project(saucer-pdf LANGUAGES CXX VERSION 3.0.3)
+project(saucer-pdf LANGUAGES CXX VERSION 3.1.0)
 
 # --------------------------------------------------------------------------------------------------------
 # Setup Library
@@ -54,7 +54,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 # Setup Backends
 # --------------------------------------------------------------------------------------------------------
 
-if (saucer_backend MATCHES "^Qt.$")
+if (saucer_backend STREQUAL "Qt")
   file(GLOB qt_sources
     "src/qt.*cpp"
   )
