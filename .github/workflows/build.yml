@@ -52,7 +52,7 @@ jobs:
           repository: "saucer/saucer"
           sparse-checkout: ".github"
           path: "actions"
-          ref: ${{ github.event.inputs.ref || 'very-experimental' }}
+          ref: ${{ github.event.inputs.ref || 'master' }}
 
       - name: 🛸 Setup Saucer
         uses: ./actions/.github/actions/setup
